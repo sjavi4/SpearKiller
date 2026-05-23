@@ -20,3 +20,5 @@ Requirement:
 - Valid Empty Space backwards
 
 To use: Stand still and Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
+
+Note: There will be Moved Wrongly alert in Server if you use it near uneven ground.
