@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "spearkiller",
+	"version": "${version}",
+	"name": "SpearKiller",
+	"description": "A Mod To Give High Right-Click Damage to Spear",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/spearkiller/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"me.autobot.SpearKiller"
+		],
+		"client": [
+			"me.autobot.client.SpearKillerClient"
+		]
+	},
+	"mixins": [
+		"spearkiller.mixins.json",
+		{
+			"config": "spearkiller.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~26.1",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

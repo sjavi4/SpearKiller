@@ -1,0 +1,15 @@
+{
+	"required": true,
+	"package": "me.autobot.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"MixinMinecraftClient",
+		"MixinMultiPlayerGameMode_SpearUseItem"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
