@@ -7,3 +7,16 @@ For setup instructions, please see the [Fabric Documentation page](https://docs.
 ## License
 
 This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+
+## Usage
+
+Requirement:
+
+- Not Client World
+- Holding Spear
+- No Movement
+- Valid Distance between Target
+- Not in Vehicle
+- Valid Empty Space backwards
+
+To use: Stand still and Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
