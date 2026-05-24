@@ -6,6 +6,7 @@ import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.InteractionHand;
@@ -13,6 +14,8 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.KineticWeapon;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -49,15 +52,16 @@ public class MixinMultiPlayerGameMode_SpearUseItem {
 		if (player.getVehicle() != null)
 			return;
 
-		DelayTask.TASKS.add(new DelayTask(6, () -> {
+		int ticks = kineticWeapon.delayTicks();
+		DelayTask.TASKS.add(new DelayTask(ticks-2, () -> {
 			SpearKillerClient.SUPPRESS = true;
 		}));
-		DelayTask.TASKS.add(new DelayTask(8, () -> {
+		DelayTask.TASKS.add(new DelayTask(ticks+1, () -> {
 			SpearKillerClient.SUPPRESS = false;
 		}));
 
 
-		DelayTask.TASKS.add(new DelayTask(7, () -> {
+		DelayTask.TASKS.add(new DelayTask(ticks-1, () -> {
 			if (player.getItemInHand(hand).get(DataComponents.KINETIC_WEAPON) == null)
 				return;
 
