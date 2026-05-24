@@ -14,11 +14,10 @@ Requirement:
 
 - Not Client World
 - Holding Spear
-- No Movement
 - Valid Distance between Target
 - Not in Vehicle
-- Valid Empty Space backwards
+- Valid Empty Space backwards on the same level
 
-To use: Stand still and Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
+To use: Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
 
-Note: There will be Moved Wrongly alert in Server if you use it near uneven ground.
+Note: The client did all collision prediction and Validated Vanilla Server Movement before execution, server should be no Warnings about `Player Moved Wrongly!` and `Player Moved Too Quickly!`
