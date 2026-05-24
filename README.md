@@ -28,5 +28,3 @@ This Mod might not working on Server with Anti-Cheat
 
 ---
 Demo Video : https://youtu.be/Eh96jMaWy4o
-
-Modrinth : https://modrinth.com/mod/spearkiller
