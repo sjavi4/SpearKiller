@@ -20,4 +20,14 @@ Requirement:
 
 To use: Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
 
-Note: The client did all collision prediction and Validated Vanilla Server Movement before execution, server should be no Warnings about `Player Moved Wrongly!` and `Player Moved Too Quickly!`
+---
+### Note
+The client did all collision prediction and Validated Vanilla Server Movement before execution, server should be no Warnings about `Player Moved Wrongly!` and `Player Moved Too Quickly!`
+
+### Others
+This Mod might not working on Server with Anti-Cheat
+
+---
+Demo Video : https://youtu.be/Eh96jMaWy4o
+
+Modrinth : https://modrinth.com/mod/spearkiller
