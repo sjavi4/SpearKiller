@@ -12,13 +12,12 @@ This template is available under the CC0 license. Feel free to learn from it and
 
 Requirement:
 
-- Not Client World
 - Holding Spear
 - Valid Distance between Target
 - Not in Vehicle
 - Valid Empty Space backwards on the same level
 
-To use: Hold Right Click for 8 Ticks, the Spear should attack if requirements reached.
+To use: Hold Right Click for certain Ticks, the Spear should attack if requirements reached.
 
 ---
 ### Note
