@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"MixinMinecraftClient",
+		"MixinLocalPlayer",
 		"MixinMultiPlayerGameMode_SpearUseItem"
 	],
 	"injectors": {

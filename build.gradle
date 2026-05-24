@@ -50,6 +50,11 @@ tasks.withType(JavaCompile).configureEach {
 	it.options.release = 25
 }
 
+tasks.named('jar', Jar) {
+	// 这行会让生成的普通 jar 带有版本号
+	archiveVersion = "${project.version}-${project.minecraft_version}"
+}
+
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 	// if it is present.

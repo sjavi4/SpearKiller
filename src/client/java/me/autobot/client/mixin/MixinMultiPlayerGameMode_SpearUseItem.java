@@ -1,18 +1,25 @@
 package me.autobot.client.mixin;
 
 import me.autobot.client.DelayTask;
+import me.autobot.client.SpearKillerClient;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.KineticWeapon;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.*;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.EntityCollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,6 +27,9 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Mixin(MultiPlayerGameMode.class)
 public class MixinMultiPlayerGameMode_SpearUseItem {
@@ -39,106 +49,137 @@ public class MixinMultiPlayerGameMode_SpearUseItem {
 		if (player.getVehicle() != null)
 			return;
 
-		final Vec3 oldPos = player.position();
+		DelayTask.TASKS.add(new DelayTask(6, () -> {
+			SpearKillerClient.SUPPRESS = true;
+		}));
+		DelayTask.TASKS.add(new DelayTask(8, () -> {
+			SpearKillerClient.SUPPRESS = false;
+		}));
+
+
 		DelayTask.TASKS.add(new DelayTask(7, () -> {
-			if (player.getVehicle() != null)
+			if (player.getItemInHand(hand).get(DataComponents.KINETIC_WEAPON) == null)
 				return;
 
-			if (player.getKnownMovement().lengthSqr() > 0.00615)
+			if (player.getVehicle() != null) {
+				player.sendOverlayMessage(Component.literal("Cannot inside Vehicle"));
 				return;
-
-			Vec3 targetPos = Vec3.ZERO;
-			double dist = 0;
-			out: for (int i = 0; i < 3; i++) {
-				for (int j = 0; j < 2; j++) {
-					int v = i * (j % 2 == 0 ? -1 : 1);
-					targetPos = posBehind(player, v);
-					dist = targetPos.distanceTo(oldPos);
-
-					if (dist < 4.5)
-						continue;
-					if (dist > 9.9)
-						continue;
-					break out;
-				}
 			}
 
-			if (targetPos == Vec3.ZERO)
+			//System.out.println("------------------- ");
+
+			final Vec3 oldPos = player.position();
+
+			//System.out.println("OriginalPos: " + oldPos);
+
+			Vec3 viewVec = player.getViewVector(0);
+
+			if (Math.abs(viewVec.y()) == 1) {
+				player.sendOverlayMessage(Component.literal("Incorrect View Direction"));
 				return;
-			if (dist < 4.5)
+			}
+			//System.out.println("View Vec: " + viewVec);
+
+
+			Vec3 planeViewVecBack = viewVec.multiply(1, 0 ,1).normalize();
+			if (planeViewVecBack == Vec3.ZERO) {
+				player.sendOverlayMessage(Component.literal("Incorrect View Direction"));
 				return;
-			if (dist > 9.9)
+			}
+
+			Vec3 planeViewVec = Vec3.ZERO;
+			for (int i = 0; i <= 45; i += 5) {
+				double radians = Math.toRadians(i);
+				double cos = Math.cos(radians);
+				double sin = Math.sin(radians);
+
+				Vec3 tempViewVec1, tempViewVec2, tempFurthest;
+
+				double rx1 = planeViewVecBack.x * cos - planeViewVecBack.z * sin;
+				double rz1 = planeViewVecBack.x * sin + planeViewVecBack.z * cos;
+				tempViewVec1 = getFurthestBackwardVector(player, new Vec3( rx1, 0, rz1));
+
+				double rx2 = planeViewVecBack.x * cos - planeViewVecBack.z * (-sin);
+				double rz2 = planeViewVecBack.x * (-sin) + planeViewVecBack.z * cos;
+				tempViewVec2 = getFurthestBackwardVector(player, new Vec3( rx2, 0, rz2));
+
+				tempFurthest = tempViewVec2.lengthSqr() > tempViewVec1.lengthSqr() ? tempViewVec2 : tempViewVec1;
+				if (tempFurthest.lengthSqr() > planeViewVec.lengthSqr())
+					planeViewVec = tempFurthest;
+
+				if (planeViewVec == Vec3.ZERO)
+					continue;
+
+				double lengthSq = planeViewVec.lengthSqr();
+				if (lengthSq < 16 || lengthSq > 98.01)
+					continue;
+				break;
+			}
+
+			if (planeViewVec == Vec3.ZERO) {
+				player.sendOverlayMessage(Component.literal("Insufficient Backward Spaces"));
+				return;
+			}
+
+			Vec3 backDir = planeViewVec;
+			Vec3 targetPos = oldPos.add(backDir);
+			/*
+			System.out.println("View Plane Vec: " + planeViewVec);
+
+			Vec3 backDir = planeViewVec;
+			//Vec3 backDir = planeViewVec.scale(-9.5);
+
+			double distanceTo = targetPos.distanceTo(oldPos);
+
+			List<VoxelShape> blockCollisions = new ArrayList<>();
+			level.getBlockCollisions(player, box.expandTowards(backDir)).forEach(blockCollisions::add);
+
+			for (var b : blockCollisions) {
+				BlockPos blockPos = BlockPos.containing(b.bounds().minX, b.bounds().minY, b.bounds().minZ);
+				System.out.println("CollisionBlocks: " + level.getBlockState(blockPos));
+			}
+
+			if (!blockCollisions.isEmpty())
 				return;
 
-			ServerboundMovePlayerPacket posPacket = new ServerboundMovePlayerPacket.Pos(targetPos.x, targetPos.y+0.25, targetPos.z, true, false);
+			System.out.println("Distance: " + distanceTo);
+			if (distanceTo < 4 || distanceTo > 9.9)
+				return;
+
+
+			System.out.println("Execute");
+			System.out.println("TargetPos: " + targetPos);
+			System.out.println("Difference: " + targetPos.subtract(oldPos));
+			 */
+
+			player.sendOverlayMessage(Component.literal("Spear Activated"));
+
+			ServerboundMovePlayerPacket posPacket = new ServerboundMovePlayerPacket.Pos(targetPos.x, targetPos.y, targetPos.z, true, false);
 			this.connection.send(posPacket);
+
 
 			ServerboundMovePlayerPacket oldPacket = new ServerboundMovePlayerPacket.Pos(oldPos.x, oldPos.y, oldPos.z, true, false);
 			this.connection.send(oldPacket);
 		}));
 	}
 
+
+
 	@Unique
-	private static Vec3 posBehind(Player player, int yOffset) {
+	private static Vec3 getFurthestBackwardVector(Player player, Vec3 backDir) {
+		Vec3 oldPos = player.position();
 		Level level = player.level();
-		Vec3 playerPos = player.position();
+		AABB box = player.getBoundingBox();
 
-		Vec3 look = player.getViewVector(0);
-		Vec3 horizontalBack = new Vec3(-look.x, 0, -look.z).normalize();
+		backDir = backDir.scale(-9.5);
+		Vec3 targetPos = oldPos.add(backDir);
 
-		if (horizontalBack == Vec3.ZERO)
+		List<VoxelShape> blockCollisions = new ArrayList<>();
+		level.getBlockCollisions(player, box.expandTowards(backDir)).forEach(blockCollisions::add);
+
+		if (!blockCollisions.isEmpty())
 			return Vec3.ZERO;
 
-		double targetY = playerPos.y + yOffset;
-		Vec3 origin = new Vec3(playerPos.x, targetY, playerPos.z);
-
-		double targetDistance = 9.5;
-
-		Vec3 bestPos = null;
-		double maxAvailableDist = -1.0;
-
-		for (int offsetDeg = 0; offsetDeg <= 45; offsetDeg += 5) {
-			int directionsCount = (offsetDeg == 0) ? 1 : 2;
-
-			for (int d = 0; d < directionsCount; d++) {
-				int angleDeg = (d == 0) ? offsetDeg : -offsetDeg;
-
-				double rad = Math.toRadians(angleDeg);
-
-				double cos = Math.cos(rad);
-				double sin = Math.sin(rad);
-				double scanX = horizontalBack.x * cos - horizontalBack.z * sin;
-				double scanZ = horizontalBack.x * sin + horizontalBack.z * cos;
-				Vec3 scanDir = new Vec3(scanX, 0, scanZ).normalize();
-
-				double availableDist = getAvailableDistance(level, player, origin, scanDir, targetDistance);
-
-				if (Math.abs(availableDist - targetDistance) < 0.01) {
-					return origin.add(scanDir.scale(targetDistance));
-				}
-
-				if (availableDist > maxAvailableDist) {
-					maxAvailableDist = availableDist;
-					bestPos = origin.add(scanDir.scale(availableDist));
-				}
-			}
-		}
-
-		return bestPos != null ? bestPos : origin;
+		return targetPos.subtract(oldPos);
 	}
-
-	@Unique
-	private static double getAvailableDistance(Level level, Player player, Vec3 origin, Vec3 dir, double maxDist) {
-		double step = 0.25;
-		CollisionContext context = CollisionContext.of(player);
-
-		for (double d = step; d <= maxDist; d += step) {
-			Vec3 checkPoint = origin.add(dir.scale(d));
-			BlockPos pos = BlockPos.containing(checkPoint);
-
-			if (!level.getBlockState(pos).getCollisionShape(level, pos, context).isEmpty()) {
-				return Math.max(0, d - step);
-			}
-		}
-		return maxDist;
-	}}
+}
